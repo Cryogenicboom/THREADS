@@ -73,6 +73,51 @@ Context Switching in threads means saving and restoring the the `rsp` register +
 
 - We using 1:n model, since we are assuming our threads to be run on single core system.
 
+# ucontext.h 
+- the ucontext.h library provides functions for user level threads and context switching within a single process.
+<br>
+
+### ucontext_t ( User Context Type )
+- a struct that helps to store several information about a single thread, it has following parts:  
+1. `uc_mcontext` is machine-specific field inside the ucontext_t structure that saves the CPU registers and processor state for a thread.
+2. `uc_stack` : which memory region is this context's stack (pointer + size).
+3. `uc_link` : which context to resume when this one's function returns.
+4. `uc_sigmask` : which signals are blocked.
+
+### getcontext(&ctx)
+- ctx == context.
+- stores the context of calling thread into a structure. 
+```C
+SYNOPSIS         
+        #include <ucontext.h>
+        int getcontext(ucontext_t *ucp);
+```
+
+### setcontext(&ctx)
+- Restores the context stored in the registers.
+- it never returns since the CPU carries on the execution from saved `%rip`. 
+
+```C
+        int setcontext(const ucontext_t *ucp);
+```
+
+### makecontext(&ctx, function, num_of_int_args)
+- makecontext creates a entirely new context for a code that has never ran. 
+- it is used to create context for code before code has ran. it's rip is set to starting of the function it is made for. 
+- This helps to have a entire new stack for a function, otherwise using `getcontext` will make 2 functions share one stack. 
+- Order to use makecontext : 
+```md
+> getcontext(&ctx) first, just to initialize the struct.
+> Allocate a stack yourself and set ctx.uc_stack.ss_sp and ctx.uc_stack.ss_size.
+> Set ctx.uc_link to a context to resume when the function returns.
+> makecontext(&ctx, func, 0). The 0 is the number of integer arguments.
+```
+
+### swapcontext(&a, &b)
+- saves the curret registers into a, and then loads b. 
+- getcontext(&a) + setcontext(&b)
+
+
 ### Process memory layout 
 - stack stores variables, values, pointers to be used during a function runtime. A function gets a dedicated space in stack called 'stack frame'. 
 ```text
