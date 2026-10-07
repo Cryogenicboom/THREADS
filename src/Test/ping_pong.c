@@ -3,60 +3,107 @@
 #include <ucontext.h>
 #include <string.h>
 
-/*
+// contexts and flags are initialized global, cannot do it in main() since makecontext() takes only integer parameters
 
-int main()
+ucontext_t ping_ctx;
+ucontext_t pong_ctx;
+ucontext_t main_ctx;
+
+int pong_status = 0;
+int ping_status = 0;
+
+void ping()
 {
-    int count = 0;
-    ucontext_t ctx;
-    getcontext(&ctx);
-    count++;
-    printf("\n%d", count);
-    if(count < 3)
+    for(int i =0; i < 5; i++)
     {
-        setcontext(&ctx);
+        printf("Ping%d\n", i);
+        swapcontext(&ping_ctx, &main_ctx);
     }
-}
+    ping_status = 1;
+}  
 
-*/
-
-
-  // 1. declare main_ctx and f_ctx            <- you did this
-  // 2. initialize f_ctx with getcontext
-  // 3. give f_ctx a stack (malloc 64KB), set ss_sp and ss_size
-  // 4. set f_ctx.uc_link to main_ctx
-  // 5. makecontext(f_ctx, function, 0)
-  // 6. print "main: before"
-  // 7. swapcontext(main_ctx, f_ctx)
-  // 8. print "main: after"
-  
-void function()
+void pong()
 {
-    printf("Function run\n");
+    for(int i =0; i < 5; i++)
+    {
+        printf("Pong%d\n", i);
+        swapcontext(&pong_ctx, &main_ctx);
+    }
+    pong_status = 1;
 }
 
 int main()
 {
-    ucontext_t main_ctx;
-    ucontext_t f_ctx;
+    getcontext(&ping_ctx);
+    ping_ctx.uc_link = &main_ctx;
+    getcontext(&pong_ctx);
+    pong_ctx.uc_link = &main_ctx;
 
-    getcontext(&f_ctx);
-    // f_ctx.uc_link = &main_ctx;
-    
-    void* ptr = (void *)malloc((64*1024));
-    if(ptr == NULL)
+    void* pong_stack = (void *)malloc(64*1024);
+    if(pong_stack == NULL)
     {
-        printf("No allocation found");
+        printf("No pong allocation found");
         return 0;
     }
-    f_ctx.uc_stack.ss_sp = ptr;
-    f_ctx.uc_stack.ss_size = 64*1024;
+    pong_ctx.uc_stack.ss_sp = pong_stack;
+    pong_ctx.uc_stack.ss_size = 64*1024;
 
-    makecontext(&f_ctx, function, 0);
+    void* ping_stack = (void *)malloc(64*1024);
+    if(ping_stack == NULL)
+    {
+        printf("No ping allocation found");
+        return 0;
+    }
+    ping_ctx.uc_stack.ss_sp = ping_stack;
+    ping_ctx.uc_stack.ss_size = 64*1024;
 
-    printf("main : before\n");
-    swapcontext(&main_ctx, &f_ctx);
-    printf("main : after\n");
+    makecontext(&ping_ctx, ping, 0);
+    makecontext(&pong_ctx, pong, 0);
 
-    return 0;
+    while(!(pong_status && ping_status))
+    {
+        if(ping_status != 1)
+        {
+            swapcontext(&main_ctx, &ping_ctx);
+        }
+        if(pong_status != 1)
+        {
+            swapcontext(&main_ctx, &pong_ctx);
+        }
+    }
+
+        free(pong_stack);
+        free(ping_stack);
+        return 0;
 }
+
+// void function()
+// {
+//     printf("Function run\n");
+// }
+
+// int main()
+// {
+//     ucontext_t main_ctx;
+//     ucontext_t f_ctx;
+
+//     getcontext(&f_ctx);
+//     f_ctx.uc_link = &main_ctx;
+    
+//     void* ptr = (void *)malloc((64*1024));
+//     if(ptr == NULL)
+//     {
+//         printf("No allocation found");
+//         return 0;
+//     }
+//     f_ctx.uc_stack.ss_sp = ptr;
+//     f_ctx.uc_stack.ss_size = 64*1024;
+
+//     makecontext(&f_ctx, function, 0);
+
+//     printf("main : before\n");
+//     swapcontext(&main_ctx, &f_ctx);
+//     printf("main : after\n");
+
+//     return 0;
+// }
