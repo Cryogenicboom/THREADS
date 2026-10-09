@@ -134,5 +134,3 @@ SYNOPSIS
 - makecontext() rewrites the saved registers so that when context is activated, `rip` is top of function and `rsp` top of `uc_stack` assigned. 
 - `uc_link` is used to tell context where to go after it terminates. 
 
-
-
