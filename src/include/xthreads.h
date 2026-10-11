@@ -1,5 +1,5 @@
-#ifndef UTHREADS_H
-#define UTHREADS_H
+#ifndef XTHREADS_H
+#define XTHREADS_H
 
 #include <ucontext.h>
 #include <stddef.h>
