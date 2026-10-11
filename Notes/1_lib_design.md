@@ -63,4 +63,4 @@
 ## The big picture 
 <br>
 
-![Thread State Diagram](meda/image.png)
+![Thread State Diagram](meda/Big_picture.png)
