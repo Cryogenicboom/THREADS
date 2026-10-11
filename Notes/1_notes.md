@@ -47,3 +47,13 @@
 <br>
 
 ## Thread Control Block (TCB)
+
+#### Sates : 
+1. Running : when the thread is actually being executed. 
+2. Ready : when the thread is waiting in queue to run
+3. Blocked : Thread has been paused, it could be waiting for another thread to join.
+4. Finished : Finished execution, retval has not been returned.
+
+- If Thread-A has called join() on Thread-B then Thread A is called 'joiner' and Thread-B is called 'target'. 
+- it is joiner's responsibility to free the stack of target thread once target thread is finished. 
+- Before erasing the target, joiner should first save the retval of target. 
