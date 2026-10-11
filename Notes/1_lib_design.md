@@ -42,7 +42,7 @@
 
 <br>
 
-![Thread State Diagram](meda/image.png)
+![Thread State Diagram](meda/state_dia.png)
 
 <br>
 
