@@ -26,5 +26,7 @@ typedef struct xthread_t
 
 }xthread_t;
 
+void xthread_self();
+void xthread_init();
 
 #endif
