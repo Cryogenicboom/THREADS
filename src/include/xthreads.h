@@ -28,5 +28,5 @@ typedef struct xthread_t
 
 void xthread_self();
 void xthread_init();
-
+void xthread_create(xthread_t *thread, void* (*func)(void *), void* arg, int allot_stack_size);
 #endif
