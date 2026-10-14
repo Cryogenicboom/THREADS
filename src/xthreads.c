@@ -48,26 +48,27 @@ int add_qback(xthread_t* thread)
 xthread_t* remove_qfront()
 {
     xthread_t* temp;
-    if(tail == NULL)
+
+    if(head != NULL)
     {
-        return NULL;
-    }
-    else if(head == tail && tail != NULL)
-    {
-        temp = head;
-        head = head->next;
-        if(head == NULL)
+        if(head->next == NULL)
         {
+            temp = head;
+            head = head->next;
             tail = head;
             return temp;
         }
-        return temp;
+        else
+        {
+            temp = head;
+            head = head->next;
+            return temp;
+        }
     }
     else
     {
-        temp = head;
-        head = head->next;
-        return temp;
+        tail = head;
+        return NULL;
     }
 }
 
