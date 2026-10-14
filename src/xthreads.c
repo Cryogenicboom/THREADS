@@ -8,7 +8,68 @@ xthread_t* current;
 xthread_t* head;
 xthread_t* tail;
 
+
 unsigned id_counter = 1;
+
+// RULE : TAIL is only NULL WHEN ---> HEAD is NULL
+
+int add_qback(xthread_t* thread)
+{   
+    xthread_t* temp;
+
+    if(thread == NULL)
+    {
+        printf("add_qback fail : Null Thread Argument passed\n");
+        return 1;
+    }
+    else if(tail == NULL && head == NULL)
+    {
+        head = thread;
+        tail = thread;
+        tail->next =NULL;
+        return 0; 
+    }
+    else
+    {
+        // store the new node's address in temp
+        temp = thread;
+        // join old tail node to new node
+        tail->next = temp;
+        // set tail to new node
+        tail = temp;
+        // clear temp and set new_node's next to null, ez
+        temp = NULL;
+        tail->next = NULL;
+
+        return 0;
+    }
+}
+
+xthread_t* remove_qfront()
+{
+    xthread_t* temp;
+    if(tail == NULL)
+    {
+        return NULL;
+    }
+    else if(head == tail && tail != NULL)
+    {
+        temp = head;
+        head = head->next;
+        if(head == NULL)
+        {
+            tail = head;
+            return temp;
+        }
+        return temp;
+    }
+    else
+    {
+        temp = head;
+        head = head->next;
+        return temp;
+    }
+}
 
 void xthread_init()
 {
@@ -22,12 +83,15 @@ void xthread_init()
     main.stack_size = 0;
 
     current = &main;
-    head = &main;   
+    head = NULL; 
+    tail = NULL;
 }
 
 void xthread_create(xthread_t *thread, void* (*func)(void *), void* arg, int allot_stack_size)
 {
     thread->id = id_counter;
+    id_counter++;
+
     if(allot_stack_size == 0)
     {
         thread->stack_size = 64*1024; // default stack size
@@ -47,12 +111,12 @@ void xthread_create(xthread_t *thread, void* (*func)(void *), void* arg, int all
     thread->state = READY;
     thread->function = func;    // which function this thread refers
 
+    thread->next = NULL;
     getcontext(&thread->ctx);
-    thread->ctx.uc_link = thread->function;
+    thread->ctx.uc_link = NULL;
     thread->ctx.uc_stack.ss_size = allot_stack_size;
     thread->ctx.uc_stack.ss_sp = thread->stack_ptr;
 
-    makecontext(&thread->ctx, thread->function, 0);
 }
 
 void xthread_self()
