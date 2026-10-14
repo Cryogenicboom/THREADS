@@ -22,8 +22,8 @@ typedef struct xthread_t
        void *arg;
        void *retval;
 
-       struct xthread_t * join_strand;
-
+       struct xthread_t* join_strand;
+       struct xthread_t* next;
 }xthread_t;
 
 void xthread_self();
