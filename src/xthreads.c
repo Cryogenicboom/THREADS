@@ -88,36 +88,54 @@ void xthread_init()
     tail = NULL;
 }
 
-void xthread_create(xthread_t *thread, void* (*func)(void *), void* arg, int allot_stack_size)
+int xthread_create(xthread_t **thread, void* (*func)(void *), void* arg, size_t stack_size)
 {
-    thread->id = id_counter;
-    id_counter++;
+    xthread_t* local_thread = malloc(sizeof(xthread_t));
+    if(local_thread == NULL)
+        return -1;
 
-    if(allot_stack_size == 0)
+    if(stack_size == 0)
     {
-        thread->stack_size = 64*1024; // default stack size
+        local_thread->stack_size = 64*1024; // default stack size
     }
     else 
     {
-        thread->stack_size = allot_stack_size;
+        local_thread->stack_size = stack_size;
     }
-
-    thread->stack_ptr = (void *)malloc(sizeof(thread->stack_size));
-    if(thread->stack_ptr == NULL)
+    local_thread->stack_ptr = (void *)malloc(sizeof(local_thread->stack_size));
+    if(local_thread->stack_ptr == NULL)
     {
         printf("malloc failed, stack_ptr can't be allot.\n");
-        free(thread->stack_ptr);
+        free(local_thread->stack_ptr);
         return;
     }
-    thread->state = READY;
-    thread->function = func;    // which function this thread refers
 
-    thread->next = NULL;
-    getcontext(&thread->ctx);
-    thread->ctx.uc_link = NULL;
-    thread->ctx.uc_stack.ss_size = allot_stack_size;
-    thread->ctx.uc_stack.ss_sp = thread->stack_ptr;
+    local_thread->id = id_counter;
 
+    local_thread->state = READY;
+    
+    local_thread->function = func;    // which function this thread refers
+
+    local_thread->arg = arg;
+
+    local_thread->next = NULL;
+
+    getcontext(&local_thread->ctx);
+
+    local_thread->ctx.uc_link = NULL;
+    local_thread->ctx.uc_stack.ss_size = stack_size;
+    local_thread->ctx.uc_stack.ss_sp = local_thread->stack_ptr;
+
+    if(add_qback(local_thread) != 0)
+    {
+        free(local_thread->stack_ptr);
+        free(local_thread);
+        return -1;
+    }
+    
+    id_counter++;
+    *thread = local_thread;         
+    return 0;
 }
 
 void xthread_self()
