@@ -79,6 +79,13 @@ Context Switching in threads means saving and restoring the the `rsp` register +
 
 ## ucontext.h 
 - the ucontext.h library provides functions for user level threads and context switching within a single process.
+- It is a bookkeeping where this lib takes snapshot of "everything that is required to resume a piece of code".
+- some of the bookkeepings are 
+| `uc_mcontext` |	What are the CPU registers? |
+| `uc_stack` |	Where is this context’s stack? |
+| `uc_link` |	What runs after this context’s function returns? |
+| `uc_sigmask` |	Which signals are blocked while it runs? |
+
 <br>
 
 #### ucontext_t ( User Context Type )
@@ -107,6 +114,7 @@ SYNOPSIS
 
 #### makecontext(&ctx, function, num_of_int_args)
 - makecontext creates a entirely new context for a code that has never ran. 
+- **function called by makecontext has no caller, so if it's `uc_link = NULL`, then whole program exits.**
 - it is used to create context for code before code has ran. it's rip is set to starting of the function it is made for. 
 - This helps to have a entire new stack for a function, otherwise using `getcontext` will make 2 functions share one stack. 
 - Order to use makecontext : 
