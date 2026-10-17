@@ -26,7 +26,7 @@ typedef struct xthread_t
        struct xthread_t* next;
 }xthread_t;
 
-void xthread_self();
+// void xthread_self();
 void xthread_init();
 int xthread_create(xthread_t **thread, void* (*func)(void *), void* arg, size_t stack_size);
 #endif

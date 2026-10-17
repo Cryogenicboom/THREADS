@@ -11,6 +11,14 @@ xthread_t* tail;
 
 unsigned id_counter = 1;
 
+static void trampoline(void)
+{
+    // 1. call the user's function, using what is stored in current
+    current->retval = current->function(current->arg);
+    // 2. keep the value it returns
+    // 3. ???
+    xthread_exit(current->retval);
+}
 // RULE : TAIL is only NULL WHEN ---> HEAD is NULL
 
 int add_qback(xthread_t* thread)
@@ -102,12 +110,14 @@ int xthread_create(xthread_t **thread, void* (*func)(void *), void* arg, size_t 
     {
         local_thread->stack_size = stack_size;
     }
-    local_thread->stack_ptr = (void *)malloc(sizeof(local_thread->stack_size));
+
+    local_thread->stack_ptr = malloc(local_thread->stack_size);
     if(local_thread->stack_ptr == NULL)
     {
         printf("malloc failed, stack_ptr can't be allot.\n");
-        free(local_thread->stack_ptr);
-        return;
+        // when stack_allocation fails, stack_ptr is already NULL, so we free TCB to say "TCB allocation failed"
+        free(local_thread);
+        return -1;
     }
 
     local_thread->id = id_counter;
@@ -120,11 +130,19 @@ int xthread_create(xthread_t **thread, void* (*func)(void *), void* arg, size_t 
 
     local_thread->next = NULL;
 
-    getcontext(&local_thread->ctx);
+    if(getcontext(&local_thread->ctx) == -1)
+    {
+        printf("Fail : getcontext\n");
+        free(local_thread->stack_ptr);
+        free(local_thread);
+        return -1;
+    }
 
     local_thread->ctx.uc_link = NULL;
-    local_thread->ctx.uc_stack.ss_size = stack_size;
+    local_thread->ctx.uc_stack.ss_size = local_thread->stack_size;
     local_thread->ctx.uc_stack.ss_sp = local_thread->stack_ptr;
+
+    makecontext(&local_thread->ctx, trampoline, 0);
 
     if(add_qback(local_thread) != 0)
     {
@@ -138,12 +156,13 @@ int xthread_create(xthread_t **thread, void* (*func)(void *), void* arg, size_t 
     return 0;
 }
 
-void xthread_self()
-{
-    if (current == NULL) {
-            printf("xthread has not been initialized.\n");
-            return;
-        }
+// xthread_t xthread_self()
+// {
+//     // if (current == NULL) {
+//     //         printf("xthread has not been initialized.\n");
+//     //         return NULL;
+//     //     }
 
-    printf("Id: %u, Status: %d\n", current->id, current->state);
-}
+//     // printf("Id: %u, Status: %d\n", current->id, current->state);
+//     return current;
+// }
